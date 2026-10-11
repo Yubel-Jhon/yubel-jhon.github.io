@@ -1,0 +1,169 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN" translate="no" class="notranslate">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="google" content="notranslate" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Creabra · 模拟模型体验版</title>
+    <!-- 标签页图标：猫头（从 components/Logo.tsx 抠出来的前 6 条 path）。
+         之前一条 rel="icon" 都没有，浏览器给了个默认地球。 -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- 10/9：Tailwind 改本地构建（tailwind.css + tailwind.config.js + postcss.config.js），
+         不再从 cdn.tailwindcss.com 拉 —— 那个 CDN 被墙/代理一抖，整站样式就没了。 -->
+    <link href="/fonts/google-fonts.css" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #f8f9fa;
+        color: #18181b;
+      }
+      h1, h2, h3, .serif {
+        font-family: 'Playfair Display', serif;
+      }
+      .font-mono {
+        font-family: 'JetBrains Mono', monospace;
+      }
+      ::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent; 
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #e5e7eb; 
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #d1d5db; 
+      }
+      .bg-dot-pattern {
+        background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+        background-size: 40px 40px;
+      }
+      .garment-version-card {
+        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+      }
+      .garment-version-card:hover {
+        transform: translateY(-4px) scale(1.005);
+      }
+      
+      /* Animated Aurora Background */
+      .aurora-bg {
+        background: linear-gradient(-45deg, #ABF1FF, #F6D8DB, #FFDDB9, #ABF1FF);
+        background-size: 400% 400%;
+        animation: auroraGradient 15s ease infinite;
+      }
+      
+      @keyframes auroraGradient {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+
+      /* 输入框聚焦黑框闪现修复（10/8）：Chromium/Edge 给 textarea 的原生 :focus-visible
+         描边（鼠标点进去也算）会在 transition-all 下闪现一帧黑框；全局按死 */
+      textarea:focus,
+      textarea:focus-visible {
+        outline: none !important;
+      }
+
+      /* Gradient Move for Borders - Ping Pong to avoid jump */
+      @keyframes gradient-move {
+        0% { background-position: 0% 50%; } 
+        50% { background-position: 100% 50%; } 
+        100% { background-position: 0% 50%; } 
+      }
+
+      .credit-topup-slider {
+        -webkit-appearance: none;
+           -moz-appearance: none;
+                appearance: none;
+        width: 100%;
+        height: 8px;
+        border-radius: 9999px;
+        cursor: pointer;
+        outline: none;
+      }
+      .credit-topup-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+                appearance: none;
+        width: 22px;
+        height: 22px;
+        border: 3px solid #ffffff;
+        border-radius: 9999px;
+        background: #111827;
+        box-shadow: 0 2px 7px rgba(17, 24, 39, 0.35);
+        cursor: grab;
+        -webkit-transition: transform 120ms ease;
+        transition: transform 120ms ease;
+      }
+      .credit-topup-slider::-webkit-slider-thumb:active {
+        cursor: grabbing;
+        transform: scale(1.12);
+      }
+      .credit-topup-slider::-moz-range-thumb {
+        width: 16px;
+        height: 16px;
+        border: 3px solid #ffffff;
+        border-radius: 9999px;
+        background: #111827;
+        box-shadow: 0 2px 7px rgba(17, 24, 39, 0.35);
+        cursor: grab;
+      }
+      .credit-topup-slider:focus-visible {
+        box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.18);
+      }
+
+      /* 10/8 涂鸦编辑点亮动效：缩略图从左到右波浪跳一下 + 外圈一次性扩散（fill both：延迟期停在第一帧，播完停在最后一帧，不循环） */
+      @keyframes doodle-pop {
+        0% { transform: translateY(0) scale(1); }
+        45% { transform: translateY(-3px) scale(1.08); }
+        100% { transform: translateY(-1px) scale(1.03); }
+      }
+      .doodle-pop { animation: doodle-pop 0.45s ease-out both; }
+      @keyframes doodle-pulse {
+        0% { opacity: 0.45; transform: scale(0.92); }
+        100% { opacity: 0; transform: scale(1.55); }
+      }
+      .doodle-pulse { animation: doodle-pulse 0.7s ease-out both; }
+
+      /* 10/10 涂鸦选择模式（二版：用户嫌蚂蚁线土）——相机取景语言：
+         目标只画四角 L 短线，整组缓慢呼吸（2.8s 一轮，只动 opacity 不动几何），
+         hover 时四角向内收拢。黑胶囊用白色光环呼吸。全程黑白；reduced-motion 全关 */
+      @keyframes doodle-breathe {
+        0%, 100% { opacity: 0.45; }
+        50% { opacity: 1; }
+      }
+      .doodle-focus { animation: doodle-breathe 2.8s ease-in-out infinite; }
+      /* 涂鸦选择态光标：小画笔（lucide brush 双层：白 5px 描边垫底保 any 底色可见，黑 2px 笔身），
+         热点 (5,22)=笔尖；crosshair 兜底 */
+      .doodle-cursor-brush {
+        cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke-linecap='round' stroke-linejoin='round'><g stroke='white' stroke-width='5.5'><path d='M9.06 11.9l8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08'/><path d='M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08 1.1 2.49 2.02 4 2.02 2.2 0 4-1.8 4-4.04a3.01 3.01 0 0 0-3-3.02z'/></g><g stroke='%2318181b' stroke-width='2'><path d='M9.06 11.9l8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08'/><path d='M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08 1.1 2.49 2.02 4 2.02 2.2 0 4-1.8 4-4.04a3.01 3.01 0 0 0-3-3.02z'/></g></svg>") 5 22, crosshair;
+      }
+      @keyframes doodle-halo {
+        0%, 100% { box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.45), 0 0 0 0 rgba(255, 255, 255, 0); }
+        50% { box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.95), 0 0 0 4px rgba(255, 255, 255, 0.22); }
+      }
+      .doodle-halo { animation: doodle-halo 2.8s ease-in-out infinite; }
+      @keyframes doodle-armed-ripple {
+        0% { box-shadow: 0 0 0 0 rgba(24, 24, 27, 0.35); }
+        70% { box-shadow: 0 0 0 9px rgba(24, 24, 27, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(24, 24, 27, 0); }
+      }
+      .doodle-armed-ripple { animation: doodle-armed-ripple 1.6s ease-out infinite; }
+      @media (prefers-reduced-motion: reduce) {
+        .doodle-focus, .doodle-halo, .doodle-armed-ripple { animation: none; }
+      }
+    </style>
+    <script src="/demo-fixtures.js"></script>
+    <script src="/demo-api.js"></script>
+    <script type="module" crossorigin src="/assets/index-CNd_Uake.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-CrvJT_mW.css">
+  </head>
+  <body translate="no" class="notranslate">
+    <div id="root" translate="no" class="notranslate"></div>
+
+  </body>
+</html>
